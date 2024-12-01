@@ -20,6 +20,7 @@ struct CursorTimer(Timer);
 struct CursorVisible(bool);
 
 #[derive(Component)]
+#[require()]
 struct Cursor;
 
 struct InputBoxPlugin;
@@ -30,7 +31,7 @@ impl Plugin for InputBoxPlugin {
             TimerMode::Repeating,
         )))
         .add_systems(Startup, init)
-        .add_systems(Update, input);
+        .add_systems(Update, (input, animate_cursor));
     }
 }
 
@@ -57,11 +58,26 @@ fn init(mut commands: Commands, asset_server: Res<AssetServer>) {
         TextSpan::new("con"),
     )).with_child((
         TextSpan::new("|"),
+        TextColor::from(Color::srgba(1., 1., 1., 1.)),
         Cursor
     ))
     ;
 }
 fn input() {}
+
+fn animate_cursor(time: Res<Time>, mut timer: ResMut<CursorTimer>, mut cursor: Query<&mut TextColor, With<Cursor>>) {
+
+    if timer.0.tick(time.delta()).just_finished() {
+        let mut c = cursor.get_single_mut().unwrap();
+        if c.0.alpha() == 1.0 {
+            c.0 = Color::srgba(1., 1., 1., 0.);
+            println!("vvv");
+        } else {
+            c.0 = Color::srgba(1., 1., 1., 1.);
+            println!("hhh");
+        }
+    }
+}
 
 fn main() {
     App::new()
