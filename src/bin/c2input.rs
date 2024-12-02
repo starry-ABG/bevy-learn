@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use bevy::{
+    ecs::event,
     input::keyboard::{Key, KeyboardInput},
     prelude::*,
     state::commands,
@@ -41,12 +42,17 @@ impl Plugin for InputBoxPlugin {
         .add_systems(
             Update,
             // listen_keyboard_input_events.before(update_input_box),
-            (listen_keyboard_input_events, update_input_box)
+            (
+                listen_keyboard_input_events,
+                update_input_box,
+                listen_ime_events,
+            ),
         );
     }
 }
 
-fn init(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn init(mut commands: Commands, asset_server: Res<AssetServer>, mut window: Single<&mut Window>) {
+    window.ime_enabled = true;
     let font = asset_server.load("fonts/NotoSansSC.ttf");
     commands
         .spawn((
@@ -123,7 +129,6 @@ fn update_input_box(
     // input_box: Query<Entity, With<InputBox>>,
     mut conten: Query<&mut TextSpan, With<BoxContent>>,
 ) {
-    
     // for e in input_box.iter() {
     //     println!("www{}", 1);
     // }
@@ -135,6 +140,17 @@ fn update_input_box(
         // println!("children {}", children.len());
         if let Ok(mut c) = conten.get_mut(*text_span) {
             c.0 = b.content.clone();
+        }
+    }
+}
+
+fn listen_ime_events(mut events: EventReader<Ime>, mut input_box: Single<&mut InputBox>) {
+    for event in events.read() {
+        match event {
+            Ime::Commit { value, .. } => {
+                input_box.content.push_str(value);
+            }
+            _ => (),
         }
     }
 }
