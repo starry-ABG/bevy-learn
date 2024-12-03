@@ -2,13 +2,14 @@ use std::time::Duration;
 
 use bevy::{
     ecs::event,
-    input::keyboard::{Key, KeyboardInput},
+    input::{keyboard::{Key, KeyboardInput}, mouse::MouseButtonInput},
     prelude::*,
     state::commands,
 };
 
+
 #[derive(Component)]
-#[require(Text, CursorVisible(|| CursorVisible(true)))]
+#[require(Text, Node, Interaction, CursorVisible(|| CursorVisible(true)))]
 struct InputBox {
     content: String,
     cursor_position: usize,
@@ -46,6 +47,7 @@ impl Plugin for InputBoxPlugin {
                 listen_keyboard_input_events,
                 update_input_box,
                 listen_ime_events,
+                handle_foucus
             ),
         );
     }
@@ -64,12 +66,22 @@ fn init(mut commands: Commands, asset_server: Res<AssetServer>, mut window: Sing
                 ime_text: String::new(),
                 composition_range: None,
             },
-            Text::default(),
+            Node {
+                width: Val::Px(150.),
+                height: Val::Px(65.),
+                border: UiRect::all(Val::Px(5.)),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            BorderColor(Color::WHITE),
+            // BackgroundColor(Color::WHITE),
             TextFont {
                 font: font,
                 font_size: 32.,
                 ..default()
             },
+
         ))
         .with_child((TextSpan::new(""), BoxContent))
         .with_child((TextSpan::new(""),))
@@ -123,6 +135,26 @@ fn listen_keyboard_input_events(
     }
 }
 
+fn handle_foucus(mouse_button: Res<ButtonInput<MouseButton>>, input_box: Query<&Interaction, With<InputBox>>) {
+
+    // if mouse_button.just_pressed(MouseButton::Left) {
+        for i in input_box.iter() {
+            match *i {
+                Interaction::Hovered => {
+                    println!("hovered");
+                },
+                Interaction::Pressed => {
+                    println!("pressed");
+                },
+                Interaction::None => {
+                    println!("None");
+                }
+            }
+        // }
+    }
+
+}
+
 fn update_input_box(
     mut commands: Commands,
     input_box: Query<(Entity, &InputBox, &Children)>,
@@ -136,7 +168,8 @@ fn update_input_box(
     //     println!("www{}", b.content);
     // }
     for (e, b, children) in input_box.iter() {
-        let text_span = children.get(0).unwrap();
+        let text_span = children.first().unwrap();
+        // let text_span = children.get(0).unwrap();
         // println!("children {}", children.len());
         if let Ok(mut c) = conten.get_mut(*text_span) {
             c.0 = b.content.clone();
