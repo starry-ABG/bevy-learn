@@ -2,11 +2,13 @@ use std::time::Duration;
 
 use bevy::{
     ecs::event,
-    input::{keyboard::{Key, KeyboardInput}, mouse::MouseButtonInput},
+    input::{
+        keyboard::{Key, KeyboardInput},
+        mouse::MouseButtonInput,
+    },
     prelude::*,
     state::commands,
 };
-
 
 #[derive(Component)]
 #[require(Text, Node, Interaction, CursorVisible(|| CursorVisible(true)))]
@@ -21,6 +23,9 @@ struct InputBox {
 
 #[derive(Resource)]
 struct CursorTimer(Timer);
+
+#[derive(Resource, Default)]
+struct Focused(Option<Entity>);
 
 #[derive(Component, Default)]
 struct CursorVisible(bool);
@@ -38,6 +43,7 @@ impl Plugin for InputBoxPlugin {
             Duration::from_millis(530),
             TimerMode::Repeating,
         )))
+        .insert_resource(Focused::default())
         .add_systems(Startup, init)
         .add_systems(Update, (input, animate_cursor))
         .add_systems(
@@ -47,7 +53,7 @@ impl Plugin for InputBoxPlugin {
                 listen_keyboard_input_events,
                 update_input_box,
                 listen_ime_events,
-                handle_foucus
+                handle_foucus,
             ),
         );
     }
@@ -81,7 +87,6 @@ fn init(mut commands: Commands, asset_server: Res<AssetServer>, mut window: Sing
                 font_size: 32.,
                 ..default()
             },
-
         ))
         .with_child((TextSpan::new(""), BoxContent))
         .with_child((TextSpan::new(""),))
@@ -109,65 +114,68 @@ fn animate_cursor(
 }
 
 fn listen_keyboard_input_events(
+    focused: Res<Focused>,
     mut events: EventReader<KeyboardInput>,
-    input_box: Single<&mut InputBox>,
+    mut input_box: Query<&mut InputBox>,
 ) {
-    let mut input_box = input_box.into_inner();
-    for event in events.read() {
-        if !event.state.is_pressed() {
-            continue;
-        }
-        match &event.logical_key {
-            Key::Character(character) => {
-                input_box.content.push_str(character);
+    if let Some(e) = focused.0 {
+        let mut input_box = input_box.get_mut(e).unwrap();
+        for event in events.read() {
+            if !event.state.is_pressed() {
+                continue;
             }
-            Key::Enter => {
-                input_box.content.clear();
+            match &event.logical_key {
+                Key::Character(character) => {
+                    input_box.content.push_str(character);
+                }
+                Key::Enter => {
+                    input_box.content.clear();
+                }
+                Key::Backspace => {
+                    input_box.content.pop();
+                }
+                Key::Space => {
+                    input_box.content.push_str(" ");
+                }
+                _ => continue,
             }
-            Key::Backspace => {
-                input_box.content.pop();
-            }
-            Key::Space => {
-                input_box.content.push_str(" ");
-            }
-            _ => continue,
         }
     }
 }
 
-fn handle_foucus(mouse_button: Res<ButtonInput<MouseButton>>, input_box: Query<&Interaction, With<InputBox>>) {
-
-    // if mouse_button.just_pressed(MouseButton::Left) {
-        for i in input_box.iter() {
+fn handle_foucus(
+    mut f: ResMut<Focused>,
+    mouse_button: Res<ButtonInput<MouseButton>>,
+    input_box: Query<(Entity, &Interaction), With<InputBox>>,
+) {
+    if mouse_button.just_pressed(MouseButton::Left) {
+        for (e, i) in input_box.iter() {
             match *i {
                 Interaction::Hovered => {
                     println!("hovered");
-                },
+                }
                 Interaction::Pressed => {
                     println!("pressed");
-                },
+                    f.0 = Some(e);
+                    return;
+                }
                 Interaction::None => {
                     println!("None");
                 }
             }
-        // }
+        }
+        f.0 = None;
     }
-
 }
 
 fn update_input_box(
-    mut commands: Commands,
+    focused: Res<Focused>,
     input_box: Query<(Entity, &InputBox, &Children)>,
     // input_box: Query<Entity, With<InputBox>>,
     mut conten: Query<&mut TextSpan, With<BoxContent>>,
 ) {
-    // for e in input_box.iter() {
-    //     println!("www{}", 1);
-    // }
-    // for (e, b) in input_box.iter() {
-    //     println!("www{}", b.content);
-    // }
-    for (e, b, children) in input_box.iter() {
+    if let Some(e) = focused.0 {
+        let (e, b, children) = input_box.get(e).unwrap();
         let text_span = children.first().unwrap();
         // let text_span = children.get(0).unwrap();
         // println!("children {}", children.len());
@@ -177,13 +185,20 @@ fn update_input_box(
     }
 }
 
-fn listen_ime_events(mut events: EventReader<Ime>, mut input_box: Single<&mut InputBox>) {
-    for event in events.read() {
-        match event {
-            Ime::Commit { value, .. } => {
-                input_box.content.push_str(value);
+fn listen_ime_events(
+    focused: Res<Focused>,
+    mut events: EventReader<Ime>,
+    mut input_box: Query<&mut InputBox>,
+) {
+    if let Some(e) = focused.0 {
+        let mut input_box = input_box.get_mut(e).unwrap();
+        for event in events.read() {
+            match event {
+                Ime::Commit { value, .. } => {
+                    input_box.content.push_str(value);
+                }
+                _ => (),
             }
-            _ => (),
         }
     }
 }

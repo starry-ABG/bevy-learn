@@ -19,3 +19,5 @@ inputbox包含：
 
 2. 如何支持多个inputbox？
 
+Button只是一个marker结构体，系统也没有提供它的system。在制作需要有鼠标交互的UI组件时可以使用它作为基础。
+
