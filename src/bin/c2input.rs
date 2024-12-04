@@ -102,13 +102,19 @@ fn animate_cursor(
     time: Res<Time>,
     mut timer: ResMut<CursorTimer>,
     mut cursor: Query<&mut TextColor, With<Cursor>>,
+    input_box: Query<(Entity, &Children), With<InputBox>>,
+    focused: Res<Focused>,
 ) {
-    if timer.0.tick(time.delta()).just_finished() {
-        let mut c = cursor.get_single_mut().unwrap();
-        if c.0.alpha() == 1.0 {
-            c.0 = Color::srgba(1., 1., 1., 0.);
-        } else {
-            c.0 = Color::srgba(1., 1., 1., 1.);
+    if let Some(e) = focused.0 {
+        if timer.0.tick(time.delta()).just_finished() {
+            let (_, children) = input_box.get(e).unwrap();
+            let cursor_entity = children[2];
+            let mut c = cursor.get_mut(cursor_entity).unwrap();
+            if c.0.alpha() == 1.0 {
+                c.0 = Color::srgba(1., 1., 1., 0.);
+            } else {
+                c.0 = Color::srgba(1., 1., 1., 1.);
+            }
         }
     }
 }
