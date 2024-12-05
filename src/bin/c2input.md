@@ -21,3 +21,6 @@ inputbox包含：
 
 Button只是一个marker结构体，系统也没有提供它的system。在制作需要有鼠标交互的UI组件时可以使用它作为基础。
 
+3. 在commitde498f8ee2192d71d85f1b3bf23b5d1e75c0446e中InputBox require了Text，导致了InputBox所在的Node的border无效了。这是为什么呢？
+
+
