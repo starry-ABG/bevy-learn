@@ -18,9 +18,11 @@ fn init_ui(mut commands: Commands, window: Single<&Window>) {
                 height: Val::Percent(100.),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
+                border: UiRect::all(Val::Px(5.)),
                 ..default()
             },
             BackgroundColor(Color::srgb(1.0, 0., 0.)),
+            BorderColor(Color::srgb(0., 0., 1.))
         ))
         .with_child((
             Node {

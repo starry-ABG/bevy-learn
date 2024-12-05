@@ -45,25 +45,41 @@ impl Plugin for InputBoxPlugin {
         )))
         .insert_resource(Focused::default())
         .add_systems(Startup, init)
-        .add_systems(Update, (input, animate_cursor))
-        .add_systems(
-            Update,
-            // listen_keyboard_input_events.before(update_input_box),
-            (
-                listen_keyboard_input_events,
-                update_input_box,
-                listen_ime_events,
-                handle_foucus,
-            ),
-        );
+        // .add_systems(Update, (input, animate_cursor))
+        // .add_systems(
+        //     Update,
+        //     // listen_keyboard_input_events.before(update_input_box),
+        //     (
+        //         listen_keyboard_input_events,
+        //         update_input_box,
+        //         listen_ime_events,
+        //         handle_foucus,
+        //     ),
+        // )
+        ;
     }
 }
 
 fn init(mut commands: Commands, asset_server: Res<AssetServer>, mut window: Single<&mut Window>) {
     window.ime_enabled = true;
-    let font = asset_server.load("fonts/NotoSansSC.ttf");
+    // let font = asset_server.load("fonts/NotoSansSC.ttf");
     commands
-        .spawn((
+        .spawn(
+            (Node {
+                width: Val::Percent(100.),
+                height: Val::Percent(100.),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                border: UiRect::all(Val::Px(16.)),
+                // margin: UiRect::all(Val::Px(32.)),
+                // padding: UiRect::all(Val::Px(32.)),
+                ..default()
+            },
+            BorderColor(Color::srgb(1., 0., 0.)),
+            BackgroundColor(Color::srgb(0., 1., 0.)),
+        ),
+        )
+        .with_child((
             InputBox {
                 content: String::new(),
                 cursor_position: 0,
@@ -73,28 +89,31 @@ fn init(mut commands: Commands, asset_server: Res<AssetServer>, mut window: Sing
                 composition_range: None,
             },
             Node {
-                width: Val::Px(150.),
-                height: Val::Px(65.),
-                border: UiRect::all(Val::Px(5.)),
+                width: Val::Px(165.),
+                // width: Val::Percent(100.),
+                height: Val::Px(50.),
+                // height: Val::Percent(100.),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
+                border: UiRect::all(Val::Px(5.)),
                 ..default()
             },
             BorderColor(Color::WHITE),
-            // BackgroundColor(Color::WHITE),
-            TextFont {
-                font: font,
-                font_size: 32.,
-                ..default()
-            },
+            BackgroundColor(Color::BLACK),
+            // TextFont {
+            //     font: font,
+            //     font_size: 32.,
+            //     ..default()
+            // },
         ))
-        .with_child((TextSpan::new(""), BoxContent))
-        .with_child((TextSpan::new(""),))
-        .with_child((
-            TextSpan::new("|"),
-            TextColor::from(Color::srgba(1., 1., 1., 1.)),
-            Cursor,
-        ));
+        // .with_child((TextSpan::new(""), BoxContent))
+        // .with_child((TextSpan::new(""),))
+        // .with_child((
+        //     TextSpan::new("|"),
+        //     TextColor::from(Color::srgba(1., 1., 1., 1.)),
+        //     Cursor,
+        // ))
+        ;
 }
 fn input() {}
 
